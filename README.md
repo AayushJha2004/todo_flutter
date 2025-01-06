@@ -2,6 +2,8 @@
 
 A new Flutter project.
 
+This is a flutter project to make a TO DO app for iOS and Android.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'models/task.dart';
+import 'widgets/task_card.dart';
 
 void main() {
   runApp(TaskApp());
@@ -51,11 +52,12 @@ class _TaskScreenState extends State<TaskScreen> {
   ];
 
   List<Task> completedTasks = [];
-  Map<String, bool> expandedState = {};
 
   void toggleExpand(String taskTitle) {
     setState(() {
-      expandedState[taskTitle] = !(expandedState[taskTitle] ?? false);
+      tasks.firstWhere((task) => task.title == taskTitle).isExpanded =
+          !(tasks.firstWhere((task) => task.title == taskTitle).isExpanded ??
+              false);
     });
   }
 
@@ -75,6 +77,15 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 
+  void editTask(Task task) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Edit Task: "${task.title}"'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   void deleteTask(Task task) {
     setState(() {
       tasks.remove(task);
@@ -82,15 +93,6 @@ class _TaskScreenState extends State<TaskScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Task "${task.title}" deleted'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void editTask(Task task) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Editing Task "${task.title}"'),
         duration: Duration(seconds: 1),
       ),
     );
@@ -134,118 +136,13 @@ class _TaskScreenState extends State<TaskScreen> {
         itemCount: tasks.length,
         itemBuilder: (context, index) {
           final task = tasks[index];
-          final isExpanded = expandedState[task.title] ?? false;
 
-          return GestureDetector(
-            child: Dismissible(
-              key: Key(task.title),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (direction) async {
-                return false; // Prevent auto-delete
-              },
-              child: Stack(
-                children: [
-                  // Background Edit and Delete Buttons
-                  Positioned.fill(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          margin: EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[700],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.edit, color: Colors.white),
-                            onPressed: () => editTask(task),
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Container(
-                          margin: EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.white),
-                            onPressed: () => deleteTask(task),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Task Card
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          // Priority Stripe on the Leftmost Side
-                          Container(
-                            width: 8,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: getPriorityColor(task.importance),
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(12),
-                                bottomLeft: Radius.circular(12),
-                              ),
-                            ),
-                          ),
-                          // Task Details
-                          Expanded(
-                            child: ListTile(
-                              title: Text(task.title,
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: task.time != null
-                                  ? Text(
-                                      '${task.time!.format(context)}',
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    )
-                                  : null,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      task.notification
-                                          ? Icons.notifications_active
-                                          : Icons.notifications_off,
-                                      color: task.notification
-                                          ? Colors.green
-                                          : Colors.grey,
-                                    ),
-                                    onPressed: () => toggleNotification(task),
-                                  ),
-                                  if (task.details != null)
-                                    IconButton(
-                                      icon: Icon(
-                                        isExpanded
-                                            ? Icons.keyboard_arrow_up
-                                            : Icons.keyboard_arrow_down,
-                                      ),
-                                      onPressed: () => toggleExpand(task.title),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return TaskCard(
+            task: task,
+            onDelete: () => deleteTask(task),
+            onEdit: () => editTask(task),
+            onToggleNotification: () => toggleNotification(task),
+            onExpand: () => toggleExpand(task.title),
           );
         },
       ),

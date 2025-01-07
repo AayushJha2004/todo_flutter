@@ -10,6 +10,7 @@ class Task {
   String? details;
   List<SubPoint>? subPoints; // List of sub-tasks
   bool isCompleted;
+  bool isExpanded; // Add this property
 
   Task({
     required this.title,
@@ -21,6 +22,7 @@ class Task {
     this.details,
     this.subPoints,
     this.isCompleted = false,
+    this.isExpanded = false, // Default value
   });
 }
 

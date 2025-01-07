@@ -1,125 +1,262 @@
 import 'package:flutter/material.dart';
+import 'models/task.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(TaskApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class TaskApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Task Manager',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: TaskScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class TaskScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TaskScreenState createState() => _TaskScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TaskScreenState extends State<TaskScreen> {
+  List<Task> tasks = [
+    Task(
+      title: 'Dbms lab 4 lab report',
+      date: DateTime.now(),
+      time: TimeOfDay(hour: 18, minute: 0),
+      notification: true,
+      importance: 'Medium',
+      group: 'College',
+      details: 'Submit the lab report before 6 PM.',
+    ),
+    Task(
+      title: 'Meet investor mr xyz for project',
+      date: DateTime.now(),
+      time: TimeOfDay(hour: 21, minute: 0),
+      notification: true,
+      importance: 'High',
+      group: 'Work',
+      details: 'Prepare presentation and financial summary.',
+    ),
+    Task(
+      title: 'Drink Water',
+      notification: false,
+      group: 'Personal',
+    ),
+  ];
 
-  void _incrementCounter() {
+  List<Task> completedTasks = [];
+  Map<String, bool> expandedState = {};
+
+  void toggleExpand(String taskTitle) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      expandedState[taskTitle] = !(expandedState[taskTitle] ?? false);
     });
+  }
+
+  void toggleNotification(Task task) {
+    setState(() {
+      task.notification = !task.notification;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          task.notification
+              ? 'Notification Enabled for "${task.title}"'
+              : 'Notification Disabled for "${task.title}"',
+        ),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void deleteTask(Task task) {
+    setState(() {
+      tasks.remove(task);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Task "${task.title}" deleted'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void editTask(Task task) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Editing Task "${task.title}"'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Color getPriorityColor(String importance) {
+    switch (importance) {
+      case 'High':
+        return Colors.red;
+      case 'Medium':
+        return Colors.yellow;
+      case 'Low':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Tasks'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.check_circle),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Completed Tasks: ${completedTasks.length}',
+                  ),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          )
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: ListView.builder(
+        itemCount: tasks.length,
+        itemBuilder: (context, index) {
+          final task = tasks[index];
+          final isExpanded = expandedState[task.title] ?? false;
+
+          return GestureDetector(
+            child: Dismissible(
+              key: Key(task.title),
+              direction: DismissDirection.endToStart,
+              confirmDismiss: (direction) async {
+                return false; // Prevent auto-delete
+              },
+              child: Stack(
+                children: [
+                  // Background Edit and Delete Buttons
+                  Positioned.fill(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          margin: EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[700],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.edit, color: Colors.white),
+                            onPressed: () => editTask(task),
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Container(
+                          margin: EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.white),
+                            onPressed: () => deleteTask(task),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Task Card
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          // Priority Stripe on the Leftmost Side
+                          Container(
+                            width: 8,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: getPriorityColor(task.importance),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomLeft: Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                          // Task Details
+                          Expanded(
+                            child: ListTile(
+                              title: Text(task.title,
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: task.time != null
+                                  ? Text(
+                                      '${task.time!.format(context)}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    )
+                                  : null,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      task.notification
+                                          ? Icons.notifications_active
+                                          : Icons.notifications_off,
+                                      color: task.notification
+                                          ? Colors.green
+                                          : Colors.grey,
+                                    ),
+                                    onPressed: () => toggleNotification(task),
+                                  ),
+                                  if (task.details != null)
+                                    IconButton(
+                                      icon: Icon(
+                                        isExpanded
+                                            ? Icons.keyboard_arrow_up
+                                            : Icons.keyboard_arrow_down,
+                                      ),
+                                      onPressed: () => toggleExpand(task.title),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        onPressed: () {
+          setState(() {
+            tasks.add(Task(title: 'New Task', details: 'Added dynamically'));
+          });
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 }

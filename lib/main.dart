@@ -25,42 +25,52 @@ class TaskScreen extends StatefulWidget {
 }
 
 class _TaskScreenState extends State<TaskScreen> {
-  List<Task> tasks = [
-    Task(
-      title: 'Dbms lab 4 lab report',
-      date: DateTime.now(),
-      time: TimeOfDay(hour: 18, minute: 0),
-      notification: true,
-      importance: 'Medium',
-      group: 'College',
-      details: 'Submit the lab report before 6 PM.',
-    ),
-    Task(
-      title: 'Meet investor mr xyz for project',
-      date: DateTime.now(),
-      time: TimeOfDay(hour: 21, minute: 0),
-      notification: true,
-      importance: 'High',
-      group: 'Work',
-      details: 'Prepare presentation and financial summary.',
-    ),
-    Task(
-      title: 'Drink Water',
-      notification: false,
-      group: 'Personal',
-    ),
-  ];
+  List<Task> tasks = [];
+  Task? editingTask; // To track the task being edited
+  bool isAddingTask = false; // Track if we're adding a new task
+  final TextEditingController _taskController = TextEditingController();
 
-  List<Task> completedTasks = [];
+  @override
+  void dispose() {
+    _taskController.dispose();
+    super.dispose();
+  }
 
-  void toggleExpand(String taskTitle) {
+  /// Add or Save a Task
+  void saveTask() {
     setState(() {
-      tasks.firstWhere((task) => task.title == taskTitle).isExpanded =
-          !(tasks.firstWhere((task) => task.title == taskTitle).isExpanded ??
-              false);
+      if (editingTask != null) {
+        // Update an existing task
+        editingTask!.title = _taskController.text;
+        editingTask = null;
+      } else {
+        // Add a new task
+        tasks.add(Task(
+          title: _taskController.text,
+        ));
+      }
+      isAddingTask = false;
+      _taskController.clear();
     });
   }
 
+  /// Edit a Task
+  void editTask(Task task) {
+    setState(() {
+      editingTask = task;
+      _taskController.text = task.title;
+      isAddingTask = true; // Show the editor
+    });
+  }
+
+  /// Delete a Task
+  void deleteTask(Task task) {
+    setState(() {
+      tasks.remove(task);
+    });
+  }
+
+  /// Toggle Notification
   void toggleNotification(Task task) {
     setState(() {
       task.notification = !task.notification;
@@ -77,38 +87,15 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 
-  void editTask(Task task) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Edit Task: "${task.title}"'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void deleteTask(Task task) {
+  /// Toggle Task Editor
+  void toggleTaskEditor() {
     setState(() {
-      tasks.remove(task);
+      isAddingTask = !isAddingTask;
+      if (!isAddingTask) {
+        editingTask = null;
+        _taskController.clear();
+      }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Task "${task.title}" deleted'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  Color getPriorityColor(String importance) {
-    switch (importance) {
-      case 'High':
-        return Colors.red;
-      case 'Medium':
-        return Colors.yellow;
-      case 'Low':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
   }
 
   @override
@@ -116,43 +103,96 @@ class _TaskScreenState extends State<TaskScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tasks'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.check_circle),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Completed Tasks: ${completedTasks.length}',
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                return TaskCard(
+                  task: task,
+                  onDelete: () => deleteTask(task),
+                  onEdit: () => editTask(task),
+                  onToggleNotification: () => toggleNotification(task),
+                  onExpand: () {},
+                );
+              },
+            ),
+          ),
+
+          // Inline Task Editor
+          if (isAddingTask)
+            Material(
+              elevation: 8,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _taskController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Task name',
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      border: InputBorder.none,
+                    ),
                   ),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          )
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.star),
+                        onPressed: () {
+                          // Handle Importance
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.description),
+                        onPressed: () {
+                          // Handle Details (mutually exclusive with Subpoints)
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.list),
+                        onPressed: () {
+                          // Handle Subpoints (mutually exclusive with Details)
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.group),
+                        onPressed: () {
+                          // Handle Group Assignment
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.notifications),
+                        onPressed: () {
+                          // Handle Notification Toggle
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.calendar_today),
+                        onPressed: () {
+                          // Handle Date and Time Selection
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: saveTask,
+                    child: Text('Save Task'),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: tasks.length,
-        itemBuilder: (context, index) {
-          final task = tasks[index];
-
-          return TaskCard(
-            task: task,
-            onDelete: () => deleteTask(task),
-            onEdit: () => editTask(task),
-            onToggleNotification: () => toggleNotification(task),
-            onExpand: () => toggleExpand(task.title),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            tasks.add(Task(title: 'New Task', details: 'Added dynamically'));
-          });
-        },
-        child: Icon(Icons.add),
+        onPressed: toggleTaskEditor,
+        child: Icon(isAddingTask ? Icons.close : Icons.add),
       ),
     );
   }
